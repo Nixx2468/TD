@@ -24,41 +24,29 @@ const tiles: TileType[][] = [
   [ B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B ],
 ];
 
-const TILE = 64;
-const C = (t: number) => t * TILE + TILE / 2;
-
+// Waypoints em tile-space (convertidos para pixel-space em GameScene)
 const waypoints = [
-  { x: -TILE,      y: C(1) },
-  { x: C(10),      y: C(1) },
-  { x: C(10),      y: C(4) },
-  { x: C(20),      y: C(4) },
-  { x: C(20),      y: C(8) },
-  { x: C(11),      y: C(8) },
-  { x: C(11),      y: C(11) },
-  { x: 22*TILE,    y: C(11) },
+  { x: -1.0,  y: 1.5  },
+  { x: 10.5,  y: 1.5  },
+  { x: 10.5,  y: 4.5  },
+  { x: 20.5,  y: 4.5  },
+  { x: 20.5,  y: 8.5  },
+  { x: 11.5,  y: 8.5  },
+  { x: 11.5,  y: 11.5 },
+  { x: 22.0,  y: 11.5 },
 ];
-
-function pathLength(wps: { x: number; y: number }[]): number {
-  let len = 0;
-  for (let i = 1; i < wps.length; i++) {
-    const dx = wps[i]!.x - wps[i - 1]!.x;
-    const dy = wps[i]!.y - wps[i - 1]!.y;
-    len += Math.sqrt(dx * dx + dy * dy);
-  }
-  return len;
-}
 
 export const map2: MapData = {
   id: 'map2',
   name: 'Planície Cinérea',
   lore: 'Nada cresce aqui. O Carvão das Sombras queimou tudo o que existia. Os Vorrhans marcham em formação aberta.',
-  tileSize: TILE,
+  tileSize: 64,
   cols: 22,
   rows: 14,
   tiles,
   waypoints,
-  flyingPath: [{ x: -TILE, y: C(7) }, { x: 22 * TILE + TILE, y: C(7) }],
-  totalPathLength: pathLength(waypoints),
+  flyingPath: [{ x: -1.0, y: 7.5 }, { x: 23.0, y: 7.5 }],
+  totalPathLength: 0,
   startGold: 175,
   startLives: 18,
   backgroundColour: '#2a2520',

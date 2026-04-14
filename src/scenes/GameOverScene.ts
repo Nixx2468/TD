@@ -24,8 +24,8 @@ export class GameOverScene extends Scene {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const W = 1280;
-    const H = 960;
+    const W = this.game.W;
+    const H = this.game.H;
     const { won, score, mapName } = this.payload;
 
     const bg = ctx.createLinearGradient(0, 0, 0, H);
@@ -49,45 +49,46 @@ export class GameOverScene extends Scene {
     ctx.save();
     ctx.textAlign = 'center';
 
+    const cy = H / 2;
     if (won) {
       ctx.fillStyle = '#f5d87a';
-      ctx.font = 'bold 80px serif';
+      ctx.font = `bold ${Math.round(H * 0.083)}px serif`;
       ctx.shadowColor = '#f5d87a';
       ctx.shadowBlur = 40;
-      ctx.fillText('CO\'OVATINA PERSISTE', W / 2, 340);
+      ctx.fillText('CO\'OVATINA PERSISTE', W / 2, cy - Math.round(H * 0.07));
       ctx.shadowBlur = 0;
 
-      ctx.font = '28px serif';
+      ctx.font = `${Math.round(H * 0.029)}px serif`;
       ctx.fillStyle = '#c8aa60';
-      ctx.fillText('O Domínio Vorrhan foi purificado em ' + mapName, W / 2, 410);
+      ctx.fillText('O Domínio Vorrhan foi purificado em ' + mapName, W / 2, cy);
     } else {
       ctx.fillStyle = '#e05050';
-      ctx.font = 'bold 80px serif';
+      ctx.font = `bold ${Math.round(H * 0.083)}px serif`;
       ctx.shadowColor = '#e05050';
       ctx.shadowBlur = 40;
-      ctx.fillText('O NEXUS FOI TOMADO', W / 2, 340);
+      ctx.fillText('O NEXUS FOI TOMADO', W / 2, cy - Math.round(H * 0.07));
       ctx.shadowBlur = 0;
 
-      ctx.font = '28px serif';
+      ctx.font = `${Math.round(H * 0.029)}px serif`;
       ctx.fillStyle = '#c87070';
-      ctx.fillText('Co\'ovatina cai em ' + mapName, W / 2, 410);
+      ctx.fillText('Co\'ovatina cai em ' + mapName, W / 2, cy);
     }
 
     ctx.fillStyle = '#9a8a5a';
-    ctx.font = '32px serif';
-    ctx.fillText(`Purificação acumulada: ${score}`, W / 2, 490);
+    ctx.font = `${Math.round(H * 0.033)}px serif`;
+    ctx.fillText(`Purificação acumulada: ${score}`, W / 2, cy + Math.round(H * 0.052));
 
     // Cruz decorativa
     ctx.strokeStyle = won ? '#f5d87a44' : '#e0505044';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(W / 2, 530); ctx.lineTo(W / 2, 590);
-    ctx.moveTo(W / 2 - 40, 560); ctx.lineTo(W / 2 + 40, 560);
+    ctx.moveTo(W / 2, cy + Math.round(H * 0.09)); ctx.lineTo(W / 2, cy + Math.round(H * 0.15));
+    ctx.moveTo(W / 2 - 40, cy + Math.round(H * 0.12)); ctx.lineTo(W / 2 + 40, cy + Math.round(H * 0.12));
     ctx.stroke();
 
     ctx.fillStyle = '#6a5a30';
-    ctx.font = '20px serif';
-    ctx.fillText('— Clica para regressar ao menu —', W / 2, 640);
+    ctx.font = `${Math.round(H * 0.021)}px serif`;
+    ctx.fillText('— Clica para regressar ao menu —', W / 2, cy + Math.round(H * 0.18));
 
     ctx.restore();
   }

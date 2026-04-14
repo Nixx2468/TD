@@ -16,8 +16,8 @@ export class PauseScene extends Scene {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const W = 1280;
-    const H = 960;
+    const W = this.game.W;
+    const H = this.game.H;
 
     ctx.fillStyle = 'rgba(0,0,0,0.65)';
     ctx.fillRect(0, 0, W, H);

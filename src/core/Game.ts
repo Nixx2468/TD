@@ -14,8 +14,8 @@ export class Game {
   readonly input: InputHandler;
   readonly assets = new AssetLoader();
 
-  static readonly W = 1280;
-  static readonly H = 960;
+  get W(): number { return this.canvas.width; }
+  get H(): number { return this.canvas.height; }
 
   private scenes = new Map<string, Scene>();
   private currentScene!: Scene;
@@ -23,8 +23,7 @@ export class Game {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    canvas.width = Game.W;
-    canvas.height = Game.H;
+    this.fitCanvas();
     this.ctx = canvas.getContext('2d')!;
     this.input = new InputHandler(canvas);
 
@@ -33,16 +32,12 @@ export class Game {
     this.scenes.set('gameover', new GameOverScene(this));
     this.scenes.set('pause', new PauseScene(this));
 
-    this.fitCanvas();
     window.addEventListener('resize', () => this.fitCanvas());
   }
 
   private fitCanvas(): void {
-    const scaleX = window.innerWidth / Game.W;
-    const scaleY = window.innerHeight / Game.H;
-    const scale = Math.min(scaleX, scaleY);
-    this.canvas.style.width  = `${Game.W * scale}px`;
-    this.canvas.style.height = `${Game.H * scale}px`;
+    this.canvas.width  = window.innerWidth;
+    this.canvas.height = window.innerHeight;
   }
 
   async start(): Promise<void> {
@@ -65,7 +60,7 @@ export class Game {
     this.lastTime = timestamp;
 
     this.currentScene.update(dt);
-    this.ctx.clearRect(0, 0, Game.W, Game.H);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.currentScene.draw(this.ctx);
 
     requestAnimationFrame(this.loop.bind(this));

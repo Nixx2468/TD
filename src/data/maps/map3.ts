@@ -26,45 +26,33 @@ const tiles: TileType[][] = [
   [ B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B ],
 ];
 
-const TILE = 64;
-const C = (t: number) => t * TILE + TILE / 2;
-
+// Waypoints em tile-space (convertidos para pixel-space em GameScene)
 const waypoints = [
-  { x: -TILE,    y: C(2) },
-  { x: C(1),     y: C(2) },
-  { x: C(1),     y: C(4) },
-  { x: C(3),     y: C(4) },
-  { x: C(3),     y: C(6) },
-  { x: C(5),     y: C(6) },
-  { x: C(5),     y: C(8) },
-  { x: C(7),     y: C(8) },
-  { x: C(7),     y: C(10) },
-  { x: C(9),     y: C(10) },
-  { x: C(9),     y: C(12) },
-  { x: 20*TILE,  y: C(12) },
+  { x: -1.0,  y: 2.5  },
+  { x: 1.5,   y: 2.5  },
+  { x: 1.5,   y: 4.5  },
+  { x: 3.5,   y: 4.5  },
+  { x: 3.5,   y: 6.5  },
+  { x: 5.5,   y: 6.5  },
+  { x: 5.5,   y: 8.5  },
+  { x: 7.5,   y: 8.5  },
+  { x: 7.5,   y: 10.5 },
+  { x: 9.5,   y: 10.5 },
+  { x: 9.5,   y: 12.5 },
+  { x: 20.0,  y: 12.5 },
 ];
-
-function pathLength(wps: { x: number; y: number }[]): number {
-  let len = 0;
-  for (let i = 1; i < wps.length; i++) {
-    const dx = wps[i]!.x - wps[i - 1]!.x;
-    const dy = wps[i]!.y - wps[i - 1]!.y;
-    len += Math.sqrt(dx * dx + dy * dy);
-  }
-  return len;
-}
 
 export const map3: MapData = {
   id: 'map3',
   name: 'Pináculo Sancta',
   lore: 'A catedral fortaleza. O último reduto de Co\'ovatina antes do Nexus de Aether. Defendê-la é defender o mundo.',
-  tileSize: TILE,
+  tileSize: 64,
   cols: 20,
   rows: 16,
   tiles,
   waypoints,
-  flyingPath: [{ x: -TILE, y: C(7) }, { x: 20 * TILE + TILE, y: C(7) }],
-  totalPathLength: pathLength(waypoints),
+  flyingPath: [{ x: -1.0, y: 7.5 }, { x: 21.0, y: 7.5 }],
+  totalPathLength: 0,
   startGold: 200,
   startLives: 15,
   backgroundColour: '#0e1a2e',

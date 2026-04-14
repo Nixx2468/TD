@@ -27,44 +27,30 @@ const tiles: TileType[][] = [
   [ B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B ], // row 13
 ];
 
-// Waypoints em pixel-space (centro das tiles do caminho)
-// tileSize = 64, centro = tile * 64 + 32
-const TILE = 64;
-const C = (t: number) => t * TILE + TILE / 2;
-
+// Waypoints em tile-space (col/row, centros = tile + 0.5)
+// Convertidos para pixel-space em GameScene usando o tileSize calculado dinamicamente
 const waypoints = [
-  { x: -TILE,   y: C(3)  }, // entrada (fora do ecrã)
-  { x: C(3),    y: C(3)  }, // vira para sul
-  { x: C(3),    y: C(5)  },
-  { x: C(7),    y: C(5)  }, // vira para sul
-  { x: C(7),    y: C(7)  },
-  { x: C(11),   y: C(7)  }, // vira para sul
-  { x: C(11),   y: C(9)  },
-  { x: 20*TILE, y: C(9)  }, // saída (fora do ecrã)
+  { x: -1.0,  y: 3.5 }, // entrada (fora do ecrã)
+  { x: 3.5,   y: 3.5 }, // vira para sul
+  { x: 3.5,   y: 5.5 },
+  { x: 7.5,   y: 5.5 }, // vira para sul
+  { x: 7.5,   y: 7.5 },
+  { x: 11.5,  y: 7.5 }, // vira para sul
+  { x: 11.5,  y: 9.5 },
+  { x: 20.0,  y: 9.5 }, // saída (fora do ecrã)
 ];
-
-// Comprimento total pré-calculado (para pathProgress)
-function pathLength(wps: { x: number; y: number }[]): number {
-  let len = 0;
-  for (let i = 1; i < wps.length; i++) {
-    const dx = wps[i]!.x - wps[i - 1]!.x;
-    const dy = wps[i]!.y - wps[i - 1]!.y;
-    len += Math.sqrt(dx * dx + dy * dy);
-  }
-  return len;
-}
 
 export const map1: MapData = {
   id: 'map1',
   name: 'Vale das Velas',
   lore: 'A primeira muralha de luz. Capelas antigas marcam o caminho que o Domínio Vorrhan escolheu para avançar.',
-  tileSize: TILE,
+  tileSize: 64,
   cols: 20,
   rows: 14,
   tiles,
   waypoints,
-  flyingPath: [{ x: -TILE, y: C(6) }, { x: 20 * TILE + TILE, y: C(6) }],
-  totalPathLength: pathLength(waypoints),
+  flyingPath: [{ x: -1.0, y: 6.5 }, { x: 21.0, y: 6.5 }],
+  totalPathLength: 0,
   startGold: 150,
   startLives: 20,
   backgroundColour: '#1a2e0f',

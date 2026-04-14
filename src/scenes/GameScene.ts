@@ -6,7 +6,7 @@ import { map3 } from '../data/maps/map3';
 import { wavesMap1 } from '../data/waves/wavesMap1';
 import { wavesMap2 } from '../data/waves/wavesMap2';
 import { wavesMap3 } from '../data/waves/wavesMap3';
-import type { MapData } from '../types/interfaces';
+import type { MapData, Vec2 } from '../types/interfaces';
 import type { Enemy } from '../entities/Enemy';
 import type { Tower } from '../entities/Tower';
 import { EconomyManager } from '../systems/EconomyManager';
@@ -20,13 +20,35 @@ import { MapRenderer } from '../renderer/MapRenderer';
 import { EnemyRenderer } from '../renderer/EnemyRenderer';
 import { TowerRenderer } from '../renderer/TowerRenderer';
 import { ProjectileRenderer } from '../renderer/ProjectileRenderer';
-import { HUD } from '../ui/HUD';
+import { HUD, HUD_H } from '../ui/HUD';
 import { TowerPanel } from '../ui/TowerPanel';
 import { TowerInfoPanel } from '../ui/TowerInfoPanel';
 import { TowerType } from '../types/enums';
 
-const MAPS: Record<string, MapData> = { map1, map2, map3 };
+const PANEL_H = 100;
+const NOMINAL_MAPS: Record<string, MapData> = { map1, map2, map3 };
 const WAVES = { map1: wavesMap1, map2: wavesMap2, map3: wavesMap3 };
+
+/** Converts tile-space MapData to pixel-space using the current canvas size. */
+function buildRuntimeMap(nominal: MapData, canvasW: number, canvasH: number): { map: MapData; mapOffsetX: number } {
+  const availH = canvasH - HUD_H - PANEL_H;
+  const tileSize = Math.max(1, Math.floor(Math.min(canvasW / nominal.cols, availH / nominal.rows)));
+  const mapW = tileSize * nominal.cols;
+  const mapOffsetX = Math.floor((canvasW - mapW) / 2);
+
+  const toPx = (p: Vec2): Vec2 => ({ x: p.x * tileSize, y: p.y * tileSize });
+  const waypoints = nominal.waypoints.map(toPx);
+  const flyingPath: [Vec2, Vec2] = [toPx(nominal.flyingPath[0]), toPx(nominal.flyingPath[1])];
+
+  let totalPathLength = 0;
+  for (let i = 1; i < waypoints.length; i++) {
+    const dx = waypoints[i]!.x - waypoints[i - 1]!.x;
+    const dy = waypoints[i]!.y - waypoints[i - 1]!.y;
+    totalPathLength += Math.sqrt(dx * dx + dy * dy);
+  }
+
+  return { map: { ...nominal, tileSize, waypoints, flyingPath, totalPathLength }, mapOffsetX };
+}
 
 export class GameScene extends Scene {
   private map!: MapData;
@@ -49,6 +71,7 @@ export class GameScene extends Scene {
   private towerPanel!: TowerPanel;
   private towerInfoPanel = new TowerInfoPanel();
 
+  private mapOffsetX = 0;
   private paused = false;
   private time = 0;
   private speedMultiplier = 1;
@@ -57,7 +80,10 @@ export class GameScene extends Scene {
 
   onEnter(payload?: unknown): void {
     const { mapId } = payload as { mapId: string };
-    this.map = MAPS[mapId] ?? map1;
+    const nominal = NOMINAL_MAPS[mapId] ?? map1;
+    const { map, mapOffsetX } = buildRuntimeMap(nominal, this.game.W, this.game.H);
+    this.map = map;
+    this.mapOffsetX = mapOffsetX;
     this.enemies = [];
     this.paused = false;
     this.time = 0;
@@ -70,7 +96,7 @@ export class GameScene extends Scene {
     this.towerManager = new TowerManager(this.map, this.economy, eb);
     const waves = WAVES[mapId as keyof typeof WAVES] ?? wavesMap1;
     this.waveManager = new WaveManager(waves, this.enemies, this.map, eb);
-    this.towerPanel = new TowerPanel(Game.W, Game.H);
+    this.towerPanel = new TowerPanel(this.game.W, this.game.H);
 
     this.unsubs = [
       eb.on('enemy:killed', ({ enemy }) => {
@@ -140,8 +166,7 @@ export class GameScene extends Scene {
   }
 
   private handleClick(mx: number, my: number): void {
-    const W = Game.W;
-    const H = Game.H;
+    const W = this.game.W;
 
     // Botões do HUD (skip de wave e velocidade)
     const hudHit = this.hud.hitTest(mx, my);
@@ -176,10 +201,14 @@ export class GameScene extends Scene {
       return;
     }
 
-    // Área de jogo
-    if (my < this.towerPanel.panelY) {
-      const tileX = Math.floor(mx / this.map.tileSize);
-      const tileY = Math.floor(my / this.map.tileSize);
+    // Área de jogo (entre HUD e painel de torres, dentro dos limites horizontais do mapa)
+    const adjX = mx - this.mapOffsetX;
+    const adjY = my - HUD_H;
+    const mapW = this.map.cols * this.map.tileSize;
+    const mapH = this.map.rows * this.map.tileSize;
+    if (adjX >= 0 && adjX < mapW && adjY >= 0 && adjY < mapH && my < this.towerPanel.panelY) {
+      const tileX = Math.floor(adjX / this.map.tileSize);
+      const tileY = Math.floor(adjY / this.map.tileSize);
 
       if (this.towerManager.placementType !== null) {
         this.towerManager.place(this.towerManager.placementType, tileX, tileY);
@@ -192,23 +221,25 @@ export class GameScene extends Scene {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const W = Game.W;
-    const H = Game.H;
+    const W = this.game.W;
+    const H = this.game.H;
     const mapH = this.map.rows * this.map.tileSize;
+    const mapW = this.map.cols * this.map.tileSize;
 
-    // Fundo
+    // Fundo (cobre o canvas inteiro com a cor do mapa)
     ctx.fillStyle = this.map.backgroundColour;
     ctx.fillRect(0, 0, W, H);
 
-    // Offset para HUD no topo
+    // Traduz para a origem do mapa (centrado horizontalmente, abaixo do HUD)
     ctx.save();
-    ctx.translate(0, 48);
+    ctx.translate(this.mapOffsetX, HUD_H);
 
     // Preview de colocação
     const { mousePosition } = this.game.input;
-    const adjY = mousePosition.y - 48;
-    if (this.towerManager.placementType !== null && adjY > 0 && adjY < mapH) {
-      const tileX = Math.floor(mousePosition.x / this.map.tileSize);
+    const adjX = mousePosition.x - this.mapOffsetX;
+    const adjY = mousePosition.y - HUD_H;
+    if (this.towerManager.placementType !== null && adjX >= 0 && adjX < mapW && adjY >= 0 && adjY < mapH) {
+      const tileX = Math.floor(adjX / this.map.tileSize);
       const tileY = Math.floor(adjY / this.map.tileSize);
       this.mapRenderer.drawBuildableHighlight(ctx, this.map, tileX, tileY, this.towerManager.canPlace(tileX, tileY));
     }

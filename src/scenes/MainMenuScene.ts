@@ -24,13 +24,13 @@ export class MainMenuScene extends Scene {
   }
 
   onEnter(): void {
-    const W = 1280;
-    const btnW = 340;
+    const W = this.game.W;
+    const btnW = Math.min(340, Math.floor((W - 80) / MAPS.length - 20));
     const btnH = 180;
     const gap = 40;
     const totalW = MAPS.length * btnW + (MAPS.length - 1) * gap;
     const startX = (W - totalW) / 2;
-    const y = 560;
+    const y = Math.round(this.game.H * 0.58);
 
     this.buttons = MAPS.map((map, i) => ({
       map,
@@ -70,8 +70,8 @@ export class MainMenuScene extends Scene {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const W = 1280;
-    const H = 960;
+    const W = this.game.W;
+    const H = this.game.H;
 
     // Fundo
     const bg = ctx.createLinearGradient(0, 0, 0, H);
@@ -91,27 +91,29 @@ export class MainMenuScene extends Scene {
     ctx.save();
     ctx.textAlign = 'center';
     ctx.fillStyle = '#f5d87a';
-    ctx.font = 'bold 72px serif';
+    const titleY = Math.round(H * 0.19);
+    ctx.font = `bold ${Math.round(H * 0.075)}px serif`;
     ctx.shadowColor = '#f5d87a';
     ctx.shadowBlur = 30;
-    ctx.fillText('O MUNDO DE LEIRHAM', W / 2, 180);
+    ctx.fillText('O MUNDO DE LEIRHAM', W / 2, titleY);
     ctx.shadowBlur = 0;
 
-    ctx.font = '28px serif';
+    ctx.font = `${Math.round(H * 0.029)}px serif`;
     ctx.fillStyle = '#c8aa60';
-    ctx.fillText('Torre Defense — Co\'ovatina contra o Domínio Vorrhan', W / 2, 240);
+    ctx.fillText('Torre Defense — Co\'ovatina contra o Domínio Vorrhan', W / 2, titleY + Math.round(H * 0.063));
 
     // Cruz decorativa
+    const crossCY = Math.round(H * 0.42);
     ctx.strokeStyle = '#f5d87a44';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(W / 2, 280); ctx.lineTo(W / 2, 500);
-    ctx.moveTo(W / 2 - 110, 390); ctx.lineTo(W / 2 + 110, 390);
+    ctx.moveTo(W / 2, crossCY - 110); ctx.lineTo(W / 2, crossCY + 110);
+    ctx.moveTo(W / 2 - 110, crossCY); ctx.lineTo(W / 2 + 110, crossCY);
     ctx.stroke();
 
-    ctx.font = '22px serif';
+    ctx.font = `${Math.round(H * 0.023)}px serif`;
     ctx.fillStyle = '#9a8a5a';
-    ctx.fillText('— Escolhe o campo de batalha —', W / 2, 520);
+    ctx.fillText('— Escolhe o campo de batalha —', W / 2, Math.round(H * 0.54));
     ctx.restore();
 
     // Botões de mapa
