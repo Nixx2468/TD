@@ -46,6 +46,20 @@ export class WaveManager {
     return this.phase === 'complete';
   }
 
+  get isBetweenWaves(): boolean {
+    return this.phase === 'between';
+  }
+
+  get interWaveTimeLeft(): number {
+    return Math.max(0, this.interWaveTimer);
+  }
+
+  skipInterWave(): void {
+    if (this.phase === 'between') {
+      this.interWaveTimer = 0;
+    }
+  }
+
   update(dt: number): void {
     if (this.phase === 'complete') return;
 

@@ -32,6 +32,17 @@ export class Game {
     this.scenes.set('game', new GameScene(this));
     this.scenes.set('gameover', new GameOverScene(this));
     this.scenes.set('pause', new PauseScene(this));
+
+    this.fitCanvas();
+    window.addEventListener('resize', () => this.fitCanvas());
+  }
+
+  private fitCanvas(): void {
+    const scaleX = window.innerWidth / Game.W;
+    const scaleY = window.innerHeight / Game.H;
+    const scale = Math.min(scaleX, scaleY);
+    this.canvas.style.width  = `${Game.W * scale}px`;
+    this.canvas.style.height = `${Game.H * scale}px`;
   }
 
   async start(): Promise<void> {

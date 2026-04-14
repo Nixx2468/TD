@@ -2,12 +2,12 @@ import type { Tower } from '../entities/Tower';
 import { TowerType } from '../types/enums';
 
 export class TowerRenderer {
-  drawAll(ctx: CanvasRenderingContext2D, towers: Tower[], selectedTower: Tower | null): void {
+  drawAll(ctx: CanvasRenderingContext2D, towers: Tower[], selectedTower: Tower | null, time: number): void {
     for (const t of towers) {
       if (t === selectedTower) this.drawRange(ctx, t);
     }
     for (const t of towers) {
-      this.drawTower(ctx, t, t === selectedTower);
+      this.drawTower(ctx, t, t === selectedTower, time);
     }
   }
 
@@ -25,15 +25,27 @@ export class TowerRenderer {
     ctx.restore();
   }
 
-  private drawTower(ctx: CanvasRenderingContext2D, t: Tower, selected: boolean): void {
+  private drawTower(ctx: CanvasRenderingContext2D, t: Tower, selected: boolean, time: number): void {
     const { x, y } = t.position;
     const s = t.config.size / 2;
+    const pulse = Math.sin(time * 2.5 + x * 0.01) * 0.5 + 0.5; // 0–1
+
     ctx.save();
+
+    // Auréola pulsante (animação)
+    const glowR = s + 6 + pulse * 5;
+    const glow = ctx.createRadialGradient(x, y, s * 0.5, x, y, glowR);
+    glow.addColorStop(0, t.config.accentColour + '33');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, glowR, 0, Math.PI * 2);
+    ctx.fill();
 
     // Brilho se seleccionado
     if (selected) {
       ctx.shadowColor = '#f5d87a';
-      ctx.shadowBlur = 16;
+      ctx.shadowBlur = 20;
     }
 
     // Base da torre
@@ -45,7 +57,8 @@ export class TowerRenderer {
     ctx.fill();
     ctx.stroke();
 
-    // Ícone de tipo
+    // Ícone
+    ctx.shadowBlur = 0;
     ctx.fillStyle = t.config.accentColour;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -58,15 +71,17 @@ export class TowerRenderer {
     };
     ctx.fillText(icons[t.config.type] ?? '?', x, y);
 
-    // Cruz decorativa vitoriana no topo
-    ctx.strokeStyle = t.config.accentColour + '88';
+    // Cruz vitoriana animada (rotação lenta)
+    ctx.save();
+    ctx.translate(x, y - s - 10);
+    ctx.rotate(pulse * 0.15);
+    ctx.strokeStyle = t.config.accentColour + 'aa';
     ctx.lineWidth = 0.8;
     ctx.beginPath();
-    ctx.moveTo(x, y - s - 6);
-    ctx.lineTo(x, y - s - 14);
-    ctx.moveTo(x - 4, y - s - 10);
-    ctx.lineTo(x + 4, y - s - 10);
+    ctx.moveTo(0, -4); ctx.lineTo(0, 4);
+    ctx.moveTo(-4, 0); ctx.lineTo(4, 0);
     ctx.stroke();
+    ctx.restore();
 
     // Nível
     if (t.level > 0) {
@@ -77,11 +92,10 @@ export class TowerRenderer {
 
     // Laser beam
     if (t.beamActive && t.target) {
-      ctx.shadowBlur = 0;
       ctx.strokeStyle = '#e0a0ff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 + pulse;
       ctx.shadowColor = '#e0a0ff';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 10 + pulse * 6;
       ctx.beginPath();
       ctx.moveTo(x, y);
       ctx.lineTo(t.target.position.x, t.target.position.y);

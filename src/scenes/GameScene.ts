@@ -50,6 +50,8 @@ export class GameScene extends Scene {
   private towerInfoPanel = new TowerInfoPanel();
 
   private paused = false;
+  private time = 0;
+  private speedMultiplier = 1;
 
   constructor(game: Game) { super(game); }
 
@@ -58,6 +60,8 @@ export class GameScene extends Scene {
     this.map = MAPS[mapId] ?? map1;
     this.enemies = [];
     this.paused = false;
+    this.time = 0;
+    this.speedMultiplier = 1;
 
     const eb = this.game.eventBus;
     this.economy = new EconomyManager(this.map.startGold, this.map.startLives, eb);
@@ -97,6 +101,9 @@ export class GameScene extends Scene {
   update(dt: number): void {
     if (this.paused) return;
 
+    this.time += dt;
+    const scaledDt = dt * this.speedMultiplier;
+
     // Input
     const clicks = this.game.input.flush();
     for (const click of clicks) {
@@ -111,16 +118,16 @@ export class GameScene extends Scene {
       this.game.switchScene('pause', { from: 'game' });
     }
 
-    // Sistemas
-    this.waveManager.update(dt);
-    this.towerManager.update(dt, this.enemies, this.projectileManager);
-    this.projectileManager.update(dt, this.enemies, this.collisionSystem);
-    this.effectSystem.update(dt, this.enemies);
+    // Sistemas (a velocidade escalada)
+    this.waveManager.update(scaledDt);
+    this.towerManager.update(scaledDt, this.enemies, this.projectileManager);
+    this.projectileManager.update(scaledDt, this.enemies, this.collisionSystem);
+    this.effectSystem.update(scaledDt, this.enemies);
 
     // Mover inimigos
     for (const e of this.enemies) {
       if (!e.active) continue;
-      const leaked = this.pathSystem.moveEnemy(e, this.map, dt);
+      const leaked = this.pathSystem.moveEnemy(e, this.map, scaledDt);
       if (leaked) {
         e.active = false;
         this.game.eventBus.emit('enemy:leaked', { enemy: e });
@@ -128,7 +135,6 @@ export class GameScene extends Scene {
     }
 
     // Limpar inactivos
-    const before = this.enemies.length;
     this.enemies = this.enemies.filter(e => e.active || e.converted);
     // Inimigos convertidos permanecem mas não são alvos
   }
@@ -136,6 +142,18 @@ export class GameScene extends Scene {
   private handleClick(mx: number, my: number): void {
     const W = Game.W;
     const H = Game.H;
+
+    // Botões do HUD (skip de wave e velocidade)
+    const hudHit = this.hud.hitTest(mx, my);
+    if (hudHit === 'skip') {
+      this.waveManager.skipInterWave();
+      this.economy.earn(25);
+      return;
+    }
+    if (hudHit === 'speed') {
+      this.speedMultiplier = this.speedMultiplier === 3 ? 1 : this.speedMultiplier + 1;
+      return;
+    }
 
     // Painel de informação da torre seleccionada
     const sel = this.towerManager.selectedTower;
@@ -196,14 +214,23 @@ export class GameScene extends Scene {
     }
 
     this.mapRenderer.draw(ctx, this.map);
-    this.towerRenderer.drawAll(ctx, this.towerManager.towers, this.towerManager.selectedTower);
-    this.enemyRenderer.drawAll(ctx, this.enemies);
+    this.towerRenderer.drawAll(ctx, this.towerManager.towers, this.towerManager.selectedTower, this.time);
+    this.enemyRenderer.drawAll(ctx, this.enemies, this.time);
     this.projectileRenderer.drawAll(ctx, this.projectileManager.getActive());
 
     ctx.restore();
 
     // HUD (sem translate)
-    this.hud.draw(ctx, this.economy, this.waveManager.currentWaveNumber, this.waveManager.totalWaves, W);
+    this.hud.draw(
+      ctx,
+      this.economy,
+      this.waveManager.currentWaveNumber,
+      this.waveManager.totalWaves,
+      this.waveManager.isBetweenWaves,
+      this.waveManager.interWaveTimeLeft,
+      this.speedMultiplier,
+      W
+    );
 
     // Painel de torres
     this.towerPanel.draw(ctx, this.economy, this.towerManager.placementType, W, H);
